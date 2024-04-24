@@ -12,14 +12,47 @@ if (!isset($_SESSION['userid'])) {
 require_once 'includes/database-connection.php';
 
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
+function updateAccountBalance($pdo, $accountID) {
+    // Calculate the new balance
+    $stmt = $pdo->prepare("SELECT SUM(CASE WHEN transactionType = 'Income' THEN transactionAmount ELSE -transactionAmount END) AS balance FROM transactions WHERE accountID = ?");
+    $stmt->execute([$accountID]);
+    $balance = $stmt->fetchColumn();
 
-// Handle POST requests for adding transactions
+    // Update the account balance
+    $updateStmt = $pdo->prepare("UPDATE accounts SET balance = ? WHERE accountID = ?");
+    $updateStmt->execute([$balance, $accountID]);
+
+    return $balance;
+}
+
+
+// After adding a transaction
 if (isset($_POST['add'])) {
+    // Existing code for adding transaction
     $stmt = $pdo->prepare("INSERT INTO transactions (transactionDescription, transactionAmount, transactionDate, transactionType, accountID, categoryID) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $accountID, $_POST['category']]);
+
+    // Update account balance
+    $newBalance = updateAccountBalance($pdo, $accountID);
+
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
+
+// After deleting a transaction
+if (isset($_GET['delete'])) {
+    // Existing code for deleting transaction
+    $transactionID = $_GET['delete'];
+    $stmt = $pdo->prepare("DELETE FROM transactions WHERE transactionID = ?");
+    $stmt->execute([$transactionID]);
+
+    // Update account balance
+    $newBalance = updateAccountBalance($pdo, $accountID);
+
+    header('Location: account_details.php?accountID=' . $accountID);
+    exit();
+}
+
 
 // WOP: Handle POST requests for updating transactions
 if (isset($_POST['update'])) {
@@ -29,16 +62,7 @@ if (isset($_POST['update'])) {
     exit();
 }
 
-// Handle deletion of a transaction
-if (isset($_GET['delete'])) {
-    $transactionID = $_GET['delete'];
-    $stmt = $pdo->prepare("DELETE FROM transactions WHERE transactionID = ?");
-    $stmt->execute([$transactionID]);
 
-    // Redirect to clear the 'delete' parameter from the URL
-    header('Location: account_details.php?accountID=' . $accountID);
-    exit();
-}
 
 // Fetch the account details for the selected account
 $search = $_POST['search'] ?? '';
@@ -49,6 +73,12 @@ $order = $_GET['order'] ?? 'DESC';
 $transactionsStmt = $pdo->prepare("SELECT t.transactionID, t.transactionDescription, t.transactionAmount, t.transactionDate, t.transactionType, c.categoryName FROM transactions t LEFT JOIN category c ON t.categoryID = c.categoryID WHERE t.accountID = ? AND (t.transactionDescription LIKE ? OR t.transactionAmount LIKE ?) ORDER BY $sort $order");
 $transactionsStmt->execute([$accountID, '%' . $search . '%', '%' . $search . '%']);
 $transactions = $transactionsStmt->fetchAll();
+
+// Fetch the current balance
+$balanceStmt = $pdo->prepare("SELECT balance FROM accounts WHERE accountID = ?");
+$balanceStmt->execute([$accountID]);
+$currentBalance = $balanceStmt->fetchColumn();
+
 
 ob_end_flush(); // End output buffering and flush all output
 ?>
@@ -85,6 +115,7 @@ ob_end_flush(); // End output buffering and flush all output
 </head>
 <body>
     <h1>Account Transactions</h1>
+    <h2>Current Balance: $<?= number_format($currentBalance, 2) ?></h2>
     <a href="manage_accounts.php">Back to Accounts</a>
     
     
