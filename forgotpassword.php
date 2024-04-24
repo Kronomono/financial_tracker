@@ -1,5 +1,6 @@
 <?php
 session_start();
+ob_start();
 require_once 'includes/database-connection.php';
 
 $error = '';
@@ -43,6 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['userEmail']) && empty(
         $error = "Incorrect answer. Please try again.";
     }
 }
+ob_end_flush();
 ?>
 <!DOCTYPE html>
 <html lang="en">
