@@ -17,25 +17,31 @@ require_once 'includes/database-connection.php';
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
 
 function updateAccountBalance($pdo, $accountID) {
-    // First, calculate the total income
+    // Fetch the initial balance from the account table
+    $initialBalanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
+    $initialBalanceStmt->execute([$accountID]);
+    $initialBalance = $initialBalanceStmt->fetchColumn() ?: 0;
+
+    // Calculate the total income
     $incomeStmt = $pdo->prepare("SELECT SUM(transactionAmount) FROM transactions WHERE accountID = ? AND transactionType = 'Income'");
     $incomeStmt->execute([$accountID]);
-    $totalIncome = $incomeStmt->fetchColumn() ?: 0; // If null, default to 0
+    $totalIncome = $incomeStmt->fetchColumn() ?: 0;
 
-    // Then, calculate the total expenses
+    // Calculate the total expenses
     $expenseStmt = $pdo->prepare("SELECT SUM(transactionAmount) FROM transactions WHERE accountID = ? AND transactionType = 'Expense'");
     $expenseStmt->execute([$accountID]);
-    $totalExpenses = $expenseStmt->fetchColumn() ?: 0; // If null, default to 0
+    $totalExpenses = $expenseStmt->fetchColumn() ?: 0;
 
-    // The balance is total income minus total expenses
-    $balance = $totalIncome - $totalExpenses;
+    // The new balance is the initial balance plus total income minus total expenses
+    $newBalance = $initialBalance + $totalIncome - $totalExpenses;
 
-    // Update the account balance in the account table
+    // Update the new balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
-    $updateStmt->execute([$balance, $accountID]);
+    $updateStmt->execute([$newBalance, $accountID]);
 
-    return $balance;
+    return $newBalance;
 }
+
 
 
 // Handle POST requests for adding transactions
