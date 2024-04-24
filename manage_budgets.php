@@ -1,6 +1,8 @@
 <?php
 // Start the session
 session_start();
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 // Include the database connection file
 require_once 'includes/database-connection.php';
