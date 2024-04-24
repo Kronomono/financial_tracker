@@ -5,14 +5,19 @@
     font-family:"poppins",sans-serif;
 }
 body{
-    background-color: #c9d6ff;
-    background:linear-gradient(to right,#e2e2e2,#c9d6ff);
+    background-image: url('image.png'); /* Set the background image */
+    background-size: cover; /* Ensure the background covers the entire body */
+    display: flex; /* Use flexbox for alignment */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    min-height: 100vh; /* Minimum height to cover the viewport */
+    margin: 0;
 }
+
 .container{
     background:#fff;
     width:450px;
     padding:1.5rem;
-    margin:50px auto;
     border-radius:10px;
     box-shadow:0 20px 35px rgba(0,0,1,0.9);
 }
@@ -38,11 +43,6 @@ input{
 .input-group{
     padding:1% 0;
     position:relative;
-
-}
-.input-group i{
-    position:absolute;
-    color:black;
 }
 input:focus{
     background-color: transparent;
@@ -60,78 +60,29 @@ label{
     cursor:auto;
     transition:0.3s ease all;
 }
-input:focus~label,input:not(:placeholder-shown)~label{
+input:focus~label, input:not(:placeholder-shown)~label{
     top:-3em;
     color:hsl(327,90%,28%);
     font-size:15px;
 }
-.recover{
-    text-align:right;
-    font-size:1rem;
-    margin-bottom:1rem;
-
+.recover, .or, .links, .icons, button{
+    /* Adjust styles for any additional elements as needed */
 }
-.recover a{
-    text-decoration:none;
-    color:rgb(125,125,235);
-}
-.recover a:hover{
-    color:blue;
-    text-decoration:underline;
-}
-.btn{
+.btn, a.btn { /* Style for both button and anchor with class 'btn' */
+    display: inline-block;
     font-size:1.1rem;
     padding:8px 0;
     border-radius:5px;
     outline:none;
     border:none;
     width:100%;
-    background:rgb(125,125,235);
+    background:rgb(90,140,235);
     color:white;
+    text-align: center;
+    text-decoration: none; /* Removes underline from anchor */
     cursor:pointer;
     transition:0.9s;
 }
-.btn:hover{
+.btn:hover, a.btn:hover {
     background:#07001f;
-}
-.or{
-    font-size:1.1rem;
-    margin-top:0.5rem;
-    text-align:center;
-}
-.icons{
-    text-align:center;
-}
-.icons i{
-    color:rgb(125,125,235);
-    padding:0.8rem 1.5rem;
-    border-radius:10px;
-    font-size:1.5rem;
-    cursor:pointer;
-    border:2px solid #dfe9f5;
-    margin:0 15px;
-    transition:1s;
-}
-.icons i:hover{
-    background:#07001f;
-    font-size:1.6rem;
-    border:2px solid rgb(125,125,235);
-}
-.links{
-    display:flex;
-    justify-content:space-around;
-    padding:0 4rem;
-    margin-top:0.9rem;
-    font-weight:bold;
-}
-button{
-    color:rgb(125,125,235);
-    border:none;
-    background-color:transparent;
-    font-size:1rem;
-    font-weight:bold;
-}
-button:hover{
-    text-decoration:underline;
-    color:blue;
 }

@@ -56,6 +56,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['userEmail'], $_POST['p
     <meta charset="UTF-8">
     <title>Login</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .btn {
+            margin-top: 10px; /* Adds vertical spacing above each button */
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -70,14 +75,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['userEmail'], $_POST['p
                 <input type="password" name="password" id="password" required placeholder="Password">
                 <label for="password">Password:</label>
             </div>
-            <div class="recover">
-                <a href="#">Forgot password?</a>
-            </div>
             <div>
                 <button type="submit" class="btn">Login</button>
+            </div>
+            <div>
+                <a href="signup.php" class="btn" id="signUpButton">Sign Up</a>
+
             </div>
         </form>
     </div>
     <script src="script.js"></script>
 </body>
 </html>
+
+
