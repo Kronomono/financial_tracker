@@ -25,7 +25,7 @@ function updateAccountBalance($pdo, $accountID) {
     $balance = $stmt->fetchColumn();
 
     // Update the account balance
-    $updateStmt = $pdo->prepare("UPDATE accounts SET balance = ? WHERE accountID = ?");
+    $updateStmt = $pdo->prepare("UPDATE account SET balance = ? WHERE accountID = ?");
     $updateStmt->execute([$balance, $accountID]);
 
     return $balance;
@@ -79,7 +79,7 @@ $transactionsStmt->execute([$accountID, '%' . $search . '%', '%' . $search . '%'
 $transactions = $transactionsStmt->fetchAll();
 
 // Fetch the current balance
-$balanceStmt = $pdo->prepare("SELECT balance FROM accounts WHERE accountID = ?");
+$balanceStmt = $pdo->prepare("SELECT balance FROM account WHERE accountID = ?");
 $balanceStmt->execute([$accountID]);
 $currentBalance = $balanceStmt->fetchColumn();
 
@@ -118,7 +118,7 @@ ob_end_flush(); // End output buffering and flush all output
 </head>
 <body>
     <h1>Account Transactions</h1>
-    <a href="manage_accounts.php">Back to Accounts</a>
+    <a href="manage_account.php">Back to account</a>
 
     <!-- Display Current Balance -->
     <h2>Current Balance: $<?= number_format($currentBalance, 2) ?></h2>
