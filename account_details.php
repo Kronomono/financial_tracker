@@ -17,10 +17,12 @@ require_once 'includes/database-connection.php';
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
 
 
-// Handle POST requests for adding transactions
 if (isset($_POST['add'])) {
+    $transactionType = $_POST['type'];
+    $transactionAmount = ($transactionType === 'Expense') ? -$_POST['amount'] : $_POST['amount'];
+
     $stmt = $pdo->prepare("INSERT INTO transactions (transactionDescription, transactionAmount, transactionDate, transactionType, accountID, categoryID) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $accountID, $_POST['category']]);
+    $stmt->execute([$_POST['description'], $transactionAmount, $_POST['date'], $transactionType, $accountID, $_POST['category']]);
 
     // Fetch the initial balance from the account table
     $balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
@@ -28,7 +30,7 @@ if (isset($_POST['add'])) {
     $initialBalance = $balanceStmt->fetchColumn() ?: 0; // If null, default to 0
 
     // Calculate new balance
-    $newBalance = $initialBalance + $_POST['amount'];
+    $newBalance = $initialBalance + $transactionAmount;
 
     // Update the account balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
@@ -39,20 +41,26 @@ if (isset($_POST['add'])) {
     exit();
 }
 
-// Handle deletion of a transaction
 if (isset($_GET['delete'])) {
     $transactionID = $_GET['delete'];
-    $stmt = $pdo->prepare("SELECT transactionAmount FROM transactions WHERE transactionID = ?");
+    $stmt = $pdo->prepare("SELECT transactionAmount, transactionType FROM transactions WHERE transactionID = ?");
     $stmt->execute([$transactionID]);
-    $transactionAmount = $stmt->fetchColumn();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $transactionAmount = $result['transactionAmount'];
+    $transactionType = $result['transactionType'];
 
     // Fetch the initial balance from the account table
     $balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
     $balanceStmt->execute([$accountID]);
     $initialBalance = $balanceStmt->fetchColumn() ?: 0; // If null, default to 0
 
-    // Calculate new balance
-    $newBalance = $initialBalance - $transactionAmount;
+    // Calculate new balance based on the transaction type
+    if ($transactionType === 'Expense') {
+        $newBalance = $initialBalance + $transactionAmount; // If it was an expense, we need to add back the amount
+    } else {
+        $newBalance = $initialBalance - $transactionAmount; // If it was an income, we need to subtract the amount
+    }
 
     // Update the account balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
@@ -66,6 +74,7 @@ if (isset($_GET['delete'])) {
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
+
 
 // Handle POST requests for updating transactions
 if (isset($_POST['update'])) {
