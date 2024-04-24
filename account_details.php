@@ -22,28 +22,41 @@ function updateAccountBalance($pdo, $accountID) {
     $initialBalanceStmt->execute([$accountID]);
     $initialBalance = $initialBalanceStmt->fetchColumn() ?: 0; // If null, default to 0
 
-    // Now, you should subtract the sum of all expenses and add the sum of all incomes
-    // to this initial balance to get the current balance.
-    
+    // Debug: Output the initial balance
+    echo "Initial Balance: $initialBalance<br>";
+
     // Calculate the total income
     $incomeStmt = $pdo->prepare("SELECT COALESCE(SUM(transactionAmount), 0) FROM transactions WHERE accountID = ? AND transactionType = 'Income'");
     $incomeStmt->execute([$accountID]);
     $totalIncome = $incomeStmt->fetchColumn();
+
+    // Debug: Output the total income
+    echo "Total Income: $totalIncome<br>";
 
     // Calculate the total expenses
     $expenseStmt = $pdo->prepare("SELECT COALESCE(SUM(transactionAmount), 0) FROM transactions WHERE accountID = ? AND transactionType = 'Expense'");
     $expenseStmt->execute([$accountID]);
     $totalExpenses = $expenseStmt->fetchColumn();
 
+    // Debug: Output the total expenses
+    echo "Total Expenses: $totalExpenses<br>";
+
     // Adjust the initial balance with the sum of all incomes and expenses
     $newBalance = $initialBalance + $totalIncome - $totalExpenses;
+
+    // Debug: Output the new balance before updating the database
+    echo "New Balance (before update): $newBalance<br>";
 
     // Update the account balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
     $updateStmt->execute([$newBalance, $accountID]);
 
+    // Debug: Output the new balance after updating the database
+    echo "New Balance (after update): $newBalance<br>";
+
     return $newBalance;
 }
+
 
 
 
