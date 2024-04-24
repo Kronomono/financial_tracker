@@ -12,6 +12,7 @@ if (!isset($_SESSION['userid'])) {
 require_once 'includes/database-connection.php';
 
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
+
 function updateAccountBalance($pdo, $accountID) {
     // Calculate the new balance
     $stmt = $pdo->prepare("SELECT SUM(CASE WHEN transactionType = 'Income' THEN transactionAmount ELSE -transactionAmount END) AS balance FROM transactions WHERE accountID = ?");
@@ -25,44 +26,42 @@ function updateAccountBalance($pdo, $accountID) {
     return $balance;
 }
 
-
-// After adding a transaction
+// Handle POST requests for adding transactions
 if (isset($_POST['add'])) {
-    // Existing code for adding transaction
     $stmt = $pdo->prepare("INSERT INTO transactions (transactionDescription, transactionAmount, transactionDate, transactionType, accountID, categoryID) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $accountID, $_POST['category']]);
 
     // Update account balance
-    $newBalance = updateAccountBalance($pdo, $accountID);
+    updateAccountBalance($pdo, $accountID);
 
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
 
-// After deleting a transaction
+// Handle POST requests for updating transactions
+if (isset($_POST['update'])) {
+    $stmt = $pdo->prepare("UPDATE transactions SET transactionDescription = ?, transactionAmount = ?, transactionDate = ?, transactionType = ?, categoryID = ? WHERE transactionID = ?");
+    $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $_POST['categoryID'], $_POST['transactionID']]);
+
+    // Update account balance
+    updateAccountBalance($pdo, $accountID);
+
+    header('Location: account_details.php?accountID=' . $accountID);
+    exit();
+}
+
+// Handle deletion of a transaction
 if (isset($_GET['delete'])) {
-    // Existing code for deleting transaction
     $transactionID = $_GET['delete'];
     $stmt = $pdo->prepare("DELETE FROM transactions WHERE transactionID = ?");
     $stmt->execute([$transactionID]);
 
     // Update account balance
-    $newBalance = updateAccountBalance($pdo, $accountID);
+    updateAccountBalance($pdo, $accountID);
 
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
-
-
-// WOP: Handle POST requests for updating transactions
-if (isset($_POST['update'])) {
-    $stmt = $pdo->prepare("UPDATE transactions SET transactionDescription = ?, transactionAmount = ?, transactionDate = ?, transactionType = ?, categoryID = ? WHERE transactionID = ?");
-    $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $_POST['transactionID']]);
-    header('Location: account_details.php?accountID=' . $accountID);
-    exit();
-}
-
-
 
 // Fetch the account details for the selected account
 $search = $_POST['search'] ?? '';
@@ -78,7 +77,6 @@ $transactions = $transactionsStmt->fetchAll();
 $balanceStmt = $pdo->prepare("SELECT balance FROM accounts WHERE accountID = ?");
 $balanceStmt->execute([$accountID]);
 $currentBalance = $balanceStmt->fetchColumn();
-
 
 ob_end_flush(); // End output buffering and flush all output
 ?>
@@ -115,10 +113,11 @@ ob_end_flush(); // End output buffering and flush all output
 </head>
 <body>
     <h1>Account Transactions</h1>
-    <h2>Current Balance: $<?= number_format($currentBalance, 2) ?></h2>
     <a href="manage_accounts.php">Back to Accounts</a>
-    
-    
+
+    <!-- Display Current Balance -->
+    <h2>Current Balance: $<?= number_format($currentBalance, 2) ?></h2>
+
     <!-- Search Form -->
     <h2>Transactions Search</h2>
     <form method="post" action="">
@@ -170,7 +169,7 @@ ob_end_flush(); // End output buffering and flush all output
                 <td><?= htmlspecialchars($transaction['categoryName']) ?></td>
                 <td>$<?= number_format(htmlspecialchars($transaction['transactionAmount']), 2) ?></td>
                 <td><?= htmlspecialchars($transaction['transactionDate']) ?></td>
-                <td><?= htmlspecialchars($transaction['transactionType']) ?></td>
+                <td><?= htmlspecialchars($transaction['transactionType']) ?></td
                 <td><?= htmlspecialchars($transaction['transactionDescription']) ?></td>
                 <td>
                     <a href="?accountID=<?= $accountID ?>&delete=<?= $transaction['transactionID'] ?>" onclick="return confirm('Are you sure you want to delete this transaction?');">Delete</a>
