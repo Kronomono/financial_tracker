@@ -1,13 +1,13 @@
 <?php                                             // Opening PHP tag
 
 $type     = 'mysql';                             // Type of database
-$server   = '192.185.2.183';                    // Server the database is on
-$db       = 'cwpolase_FinancialTracker';     // Name of the database
+$server   = '192.185.94.193';                    // Server the database is on
+$db       = ' kronomon_financial_tracker';     // Name of the database
 $port     = '3306';                           // Port is usually 3306 in Hostgator
 $charset  = 'utf8mb4';                       // UTF-8 encoding using 4 bytes of data per char
 
-$username = 'cwpolase_Wyatt';     // Enter YOUR cPanel username and user here
-$password = 'Gizmo1970';           // Enter YOUR user password here
+$username = 'kronomon1';     // Enter YOUR cPanel username and user here
+$password = 'csc_100718989';           // Enter YOUR user password here
 
 
 

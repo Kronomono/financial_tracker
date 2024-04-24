@@ -55,22 +55,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['userEmail'], $_POST['p
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Login</h2>
-    <?php if ($error != '') echo '<p style="color:red;">' . $error . '</p>'; ?>
-    <form action="index.php" method="post">
-        <div>
-            <label for="userEmail">Email:</label>
-            <input type="email" name="userEmail" id="userEmail" required>
-        </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" name="password" id="password" required>
-        </div>
-        <div>
-            <button type="submit">Login</button>
-        </div>
-    </form>
+    <div class="container">
+        <h2 class="form-title">Login</h2>
+        <?php if ($error != '') echo '<p style="color:red;">' . $error . '</p>'; ?>
+        <form action="index.php" method="post" id="signIn">
+            <div class="input-group">
+                <input type="email" name="userEmail" id="userEmail" required placeholder="Email">
+                <label for="userEmail">Email:</label>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" id="password" required placeholder="Password">
+                <label for="password">Password:</label>
+            </div>
+            <div class="recover">
+                <a href="#">Forgot password?</a>
+            </div>
+            <div>
+                <button type="submit" class="btn">Login</button>
+            </div>
+        </form>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
