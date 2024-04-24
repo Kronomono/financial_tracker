@@ -20,35 +20,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['userEmail'], $_POST['p
 
     // SQL to check the existence of the user
     $sql = "SELECT userID, userEmail, password FROM user WHERE userEmail = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$userEmail]);  // Execute the query
 
-    if ($stmt = $pdo->prepare($sql)) {
-        $stmt->execute([$userEmail]);  // Execute the query
+    // Check if the user exists
+    if ($stmt->rowCount() == 1) {
+        $user = $stmt->fetch();
 
-        // Check if the user exists
-        if ($stmt->rowCount() == 1) {
-            $user = $stmt->fetch();
-
-            // Check the password (plaintext comparison)
-            if ($password === $user['password']) {
-                // Password is correct, start the session
-                $_SESSION['userid'] = $user['userID'];
-                $_SESSION['userEmail'] = $user['userEmail'];
-
-                // Redirect to the user dashboard
-                header('Location: dashboard.php');
-                exit();
-                ob_end_flush();   // End buffering and flush all output
-            } else {
-                $error = 'Invalid password.';
-            }
+        // Verify the password against the hashed password in the database
+        if (password_verify($password, $user['password'])) {
+            $_SESSION['userid'] = $user['userID'];
+            $_SESSION['userEmail'] = $user['userEmail'];
+            header('Location: dashboard.php');
+            exit();
         } else {
-            $error = 'Invalid email.';
+            $error = 'Invalid password.';
         }
     } else {
-        $error = 'Oops! Something went wrong. Please try again later.';
+        $error = 'Invalid email.';
     }
 }
 
+ob_end_flush();
 ?>
 <!DOCTYPE html>
 <html lang="en">

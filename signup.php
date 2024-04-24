@@ -27,13 +27,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['firstName'], $_POST['l
     if ($stmt->rowCount() > 0) {
         $error = 'Email already exists.';
     } else {
+        // Hash the password
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
         // Insert new user into the database including security question and answer
         $sql = "INSERT INTO user (firstName, lastName, userEmail, phoneNumber, password) VALUES (?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
-        $inserted = $stmt->execute([$firstName, $lastName, $userEmail, $phoneNumber, $password]);
+        $inserted = $stmt->execute([$firstName, $lastName, $userEmail, $phoneNumber, $passwordHash]);
 
         if ($inserted) {
-            // Assuming user_id is automatically generated from an AUTO_INCREMENT column
             $userID = $pdo->lastInsertId();
             $sql = "INSERT INTO security_answers (userID, questionID, answerText) VALUES (?, ?, ?)";
             $stmt = $pdo->prepare($sql);
@@ -48,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['firstName'], $_POST['l
     }
 }
 
+ob_end_flush();
 ?>
 <!DOCTYPE html>
 <html lang="en">
