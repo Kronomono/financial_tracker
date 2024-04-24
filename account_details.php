@@ -71,6 +71,23 @@ function deleteTransaction($accountID, $transactionID) {
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
+// Fetch transactions for the selected account
+function fetchTransactions($accountID, $search = '', $sort = 'transactionDate', $order = 'DESC') {
+    global $pdo;
+
+    $transactionsStmt = $pdo->prepare("SELECT t.transactionID, t.transactionDescription, t.transactionAmount, t.transactionDate, t.transactionType, c.categoryName FROM transactions t LEFT JOIN category c ON t.categoryID = c.categoryID WHERE t.accountID = ? AND (t.transactionDescription LIKE ? OR t.transactionAmount LIKE ?) ORDER BY $sort $order");
+    $transactionsStmt->execute([$accountID, '%' . $search . '%', '%' . $search . '%']);
+    return $transactionsStmt->fetchAll();
+}
+
+// Fetch the current balance from the account table
+function fetchCurrentBalance($accountID) {
+    global $pdo;
+
+    $balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
+    $balanceStmt->execute([$accountID]);
+    return $balanceStmt->fetchColumn();
+}
 
 if (isset($_POST['add'])) {
     addTransaction($_GET['accountID'], $_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $_POST['category']);
@@ -99,15 +116,8 @@ $search = $_POST['search'] ?? '';
 $sort = $_GET['sort'] ?? 'transactionDate';
 $order = $_GET['order'] ?? 'DESC';
 
-// Fetch transactions for the selected account including the transaction type
-$transactionsStmt = $pdo->prepare("SELECT t.transactionID, t.transactionDescription, t.transactionAmount, t.transactionDate, t.transactionType, c.categoryName FROM transactions t LEFT JOIN category c ON t.categoryID = c.categoryID WHERE t.accountID = ? AND (t.transactionDescription LIKE ? OR t.transactionAmount LIKE ?) ORDER BY $sort $order");
-$transactionsStmt->execute([$accountID, '%' . $search . '%', '%' . $search . '%']);
-$transactions = $transactionsStmt->fetchAll();
-
-// Fetch the current balance from the account table
-$balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
-$balanceStmt->execute([$accountID]);
-$currentBalance = $balanceStmt->fetchColumn();
+$transactions = fetchTransactions($accountID, $search, $sort, $order);
+$currentBalance = fetchCurrentBalance($accountID);
 
 ob_end_flush(); // End output buffering and flush all output
 ?>
