@@ -17,29 +17,24 @@ require_once 'includes/database-connection.php';
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
 
 function updateAccountBalance($pdo, $accountID) {
-    // Fetch the initial balance from the account table
-    $initialBalanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
-    $initialBalanceStmt->execute([$accountID]);
-    $initialBalance = $initialBalanceStmt->fetchColumn() ?: 0;
-
-    // Calculate the total income
-    $incomeStmt = $pdo->prepare("SELECT SUM(transactionAmount) FROM transactions WHERE accountID = ? AND transactionType = 'Income'");
+    // First, calculate the total income
+    $incomeStmt = $pdo->prepare("SELECT COALESCE(SUM(transactionAmount), 0) FROM transactions WHERE accountID = ? AND transactionType = 'Income'");
     $incomeStmt->execute([$accountID]);
-    $totalIncome = $incomeStmt->fetchColumn() ?: 0;
+    $totalIncome = $incomeStmt->fetchColumn();
 
-    // Calculate the total expenses
-    $expenseStmt = $pdo->prepare("SELECT SUM(transactionAmount) FROM transactions WHERE accountID = ? AND transactionType = 'Expense'");
+    // Then, calculate the total expenses
+    $expenseStmt = $pdo->prepare("SELECT COALESCE(SUM(transactionAmount), 0) FROM transactions WHERE accountID = ? AND transactionType = 'Expense'");
     $expenseStmt->execute([$accountID]);
-    $totalExpenses = $expenseStmt->fetchColumn() ?: 0;
+    $totalExpenses = $expenseStmt->fetchColumn();
 
-    // The new balance is the initial balance plus total income minus total expenses
-    $newBalance = $initialBalance + $totalIncome - $totalExpenses;
+    // The new balance is total income minus total expenses
+    $balance = $totalIncome - $totalExpenses;
 
-    // Update the new balance in the account table
+    // Update the account balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
-    $updateStmt->execute([$newBalance, $accountID]);
+    $updateStmt->execute([$balance, $accountID]);
 
-    return $newBalance;
+    return $balance;
 }
 
 
