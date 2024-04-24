@@ -57,9 +57,9 @@ if (isset($_GET['delete'])) {
 
     // Calculate new balance based on the transaction type
     if ($transactionType === 'Expense') {
-        $newBalance = $initialBalance + $transactionAmount; // If it was an expense, we need to add back the amount
+        $newBalance = $initialBalance + abs($transactionAmount); // If it was an expense, we need to add back the absolute value of the amount
     } else {
-        $newBalance = $initialBalance - $transactionAmount; // If it was an income, we need to subtract the amount
+        $newBalance = $initialBalance - abs($transactionAmount); // If it was an income, we need to subtract the absolute value of the amount
     }
 
     // Update the account balance in the account table
