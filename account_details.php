@@ -186,7 +186,7 @@ ob_end_flush(); // End output buffering and flush all output
             <?php foreach ($transactions as $transaction): ?>
             <tr>
                 <td><?= htmlspecialchars($transaction['categoryName']) ?></td>
-                <td>$<?= number_format(htmlspecialchars($transaction['transactionAmount']), 2) ?></td>
+                <td>$<?= ($transaction['transactionType'] === 'Expense') ? number_format(abs(htmlspecialchars($transaction['transactionAmount'])), 2) : number_format(htmlspecialchars($transaction['transactionAmount']), 2) ?></td>
                 <td><?= htmlspecialchars($transaction['transactionDate']) ?></td>
                 <td><?= htmlspecialchars($transaction['transactionType']) ?></td>
                 <td><?= htmlspecialchars($transaction['transactionDescription']) ?></td>
