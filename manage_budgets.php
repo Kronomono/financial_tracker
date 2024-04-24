@@ -1,5 +1,5 @@
 <?php
-ob_start(); // Start output buffering
+
 session_start();
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -65,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_budget'])) {
 $budgetsStmt = $pdo->prepare("SELECT b.budgetID, c.categoryName, b.budgetLimit, b.budgetInterval, b.startDate, b.endDate FROM budget b INNER JOIN category c ON b.categoryID = c.categoryID WHERE b.userID = ?");
 $budgetsStmt->execute([$userID]);
 $budgets = $budgetsStmt->fetchAll();
-ob_end_flush(); // End output buffering and flush all output
+
 ?>
 
 <!DOCTYPE html>
