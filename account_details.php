@@ -15,59 +15,6 @@ if (!isset($_SESSION['userid'])) {
 require_once 'includes/database-connection.php';
 
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
-function displayDebugInfo($initialBalance, $totalIncome, $totalExpenses, $newBalance) {
-    echo "<div style='background-color: #FFFFE0; padding: 10px; margin: 20px 0; border: 1px solid #E0E0E0;'>";
-    echo "<strong>Debug Information:</strong><br>";
-    echo "Initial Balance: " . number_format($initialBalance, 2) . "<br>";
-    echo "Total Income: " . number_format($totalIncome, 2) . "<br>";
-    echo "Total Expenses: " . number_format($totalExpenses, 2) . "<br>";
-    echo "New Balance: " . number_format($newBalance, 2) . "<br>";
-    echo "</div>";
-}
-
-function updateAccountBalance($pdo, $accountID) {
-    // Fetch the initial balance from the account table
-    $initialBalanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
-    $initialBalanceStmt->execute([$accountID]);
-    $initialBalance = $initialBalanceStmt->fetchColumn() ?: 0; // If null, default to 0
-
-    // Debug: Output the initial balance
-    echo "Initial Balance: $initialBalance<br>";
-
-    // Calculate the total income
-    $incomeStmt = $pdo->prepare("SELECT COALESCE(SUM(transactionAmount), 0) FROM transactions WHERE accountID = ? AND transactionType = 'Income'");
-    $incomeStmt->execute([$accountID]);
-    $totalIncome = $incomeStmt->fetchColumn();
-
-    // Debug: Output the total income
-    echo "Total Income: $totalIncome<br>";
-
-    // Calculate the total expenses
-    $expenseStmt = $pdo->prepare("SELECT COALESCE(SUM(transactionAmount), 0) FROM transactions WHERE accountID = ? AND transactionType = 'Expense'");
-    $expenseStmt->execute([$accountID]);
-    $totalExpenses = $expenseStmt->fetchColumn();
-
-    // Debug: Output the total expenses
-    echo "Total Expenses: $totalExpenses<br>";
-
-    // Adjust the initial balance with the sum of all incomes and expenses
-    $newBalance = $initialBalance + $totalIncome - $totalExpenses;
-
-    // Debug: Output the new balance before updating the database
-    echo "New Balance (before update): $newBalance<br>";
-
-    // Update the account balance in the account table
-    $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
-    $updateStmt->execute([$newBalance, $accountID]);
-
-    // Debug: Output the new balance after updating the database
-    echo "New Balance (after update): $newBalance<br>";
-
-    return $newBalance;
-}
-
-
-
 
 
 // Handle POST requests for adding transactions
@@ -75,12 +22,48 @@ if (isset($_POST['add'])) {
     $stmt = $pdo->prepare("INSERT INTO transactions (transactionDescription, transactionAmount, transactionDate, transactionType, accountID, categoryID) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $accountID, $_POST['category']]);
 
-    // Update account balance
-    updateAccountBalance($pdo, $accountID);
+    // Fetch the initial balance from the account table
+    $balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
+    $balanceStmt->execute([$accountID]);
+    $initialBalance = $balanceStmt->fetchColumn() ?: 0; // If null, default to 0
 
+    // Calculate new balance
+    $newBalance = $initialBalance + $_POST['amount'];
+
+    // Update the account balance in the account table
+    $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
+    $updateStmt->execute([$newBalance, $accountID]);
+
+    // Redirect to account details page
     header('Location: account_details.php?accountID=' . $accountID);
-    displayDebugInfo($initialBalance, $totalIncome, $totalExpenses, $newBalance);
-   
+    exit();
+}
+
+// Handle deletion of a transaction
+if (isset($_GET['delete'])) {
+    $transactionID = $_GET['delete'];
+    $stmt = $pdo->prepare("SELECT transactionAmount FROM transactions WHERE transactionID = ?");
+    $stmt->execute([$transactionID]);
+    $transactionAmount = $stmt->fetchColumn();
+
+    // Fetch the initial balance from the account table
+    $balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
+    $balanceStmt->execute([$accountID]);
+    $initialBalance = $balanceStmt->fetchColumn() ?: 0; // If null, default to 0
+
+    // Calculate new balance
+    $newBalance = $initialBalance - $transactionAmount;
+
+    // Update the account balance in the account table
+    $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
+    $updateStmt->execute([$newBalance, $accountID]);
+
+    // Delete the transaction
+    $stmt = $pdo->prepare("DELETE FROM transactions WHERE transactionID = ?");
+    $stmt->execute([$transactionID]);
+
+    // Redirect to account details page
+    header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
 
@@ -89,26 +72,13 @@ if (isset($_POST['update'])) {
     $stmt = $pdo->prepare("UPDATE transactions SET transactionDescription = ?, transactionAmount = ?, transactionDate = ?, transactionType = ?, categoryID = ? WHERE transactionID = ?");
     $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $_POST['categoryID'], $_POST['transactionID']]);
 
-    // Update account balance
-    updateAccountBalance($pdo, $accountID);
-
-    header('Location: account_details.php?accountID=' . $accountID);
-    displayDebugInfo($initialBalance, $totalIncome, $totalExpenses, $newBalance);
-    exit();
-}
-
-// Handle deletion of a transaction
-if (isset($_GET['delete'])) {
-    $transactionID = $_GET['delete'];
-    $stmt = $pdo->prepare("DELETE FROM transactions WHERE transactionID = ?");
-    $stmt->execute([$transactionID]);
-
-    // Update account balance
-    updateAccountBalance($pdo, $accountID);
+   
 
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
+
+
 
 // Fetch the account details for the selected account
 $search = $_POST['search'] ?? '';
