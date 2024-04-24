@@ -17,10 +17,18 @@ require_once 'includes/database-connection.php';
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
 
 function updateAccountBalance($pdo, $accountID) {
-    // Calculate the new balance
-    $stmt = $pdo->prepare("SELECT SUM(CASE WHEN transactionType = 'Income' THEN transactionAmount ELSE -transactionAmount END) AS balance FROM transactions WHERE accountID = ?");
-    $stmt->execute([$accountID]);
-    $balance = $stmt->fetchColumn();
+    // First, calculate the total income
+    $incomeStmt = $pdo->prepare("SELECT SUM(transactionAmount) FROM transactions WHERE accountID = ? AND transactionType = 'Income'");
+    $incomeStmt->execute([$accountID]);
+    $totalIncome = $incomeStmt->fetchColumn() ?: 0; // If null, default to 0
+
+    // Then, calculate the total expenses
+    $expenseStmt = $pdo->prepare("SELECT SUM(transactionAmount) FROM transactions WHERE accountID = ? AND transactionType = 'Expense'");
+    $expenseStmt->execute([$accountID]);
+    $totalExpenses = $expenseStmt->fetchColumn() ?: 0; // If null, default to 0
+
+    // The balance is total income minus total expenses
+    $balance = $totalIncome - $totalExpenses;
 
     // Update the account balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
@@ -28,6 +36,7 @@ function updateAccountBalance($pdo, $accountID) {
 
     return $balance;
 }
+
 
 // Handle POST requests for adding transactions
 if (isset($_POST['add'])) {
