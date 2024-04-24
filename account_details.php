@@ -4,8 +4,6 @@ ob_start(); // Start output buffering
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-echo "Testing simple output.";
-
 
 // Check if the user is logged in, otherwise redirect to login page
 if (!isset($_SESSION['userid'])) {
@@ -24,13 +22,12 @@ function updateAccountBalance($pdo, $accountID) {
     $stmt->execute([$accountID]);
     $balance = $stmt->fetchColumn();
 
-    // Update the account balance in the account table (note the singular 'account')
+    // Update the account balance in the account table
     $updateStmt = $pdo->prepare("UPDATE account SET accountBalance = ? WHERE accountID = ?");
     $updateStmt->execute([$balance, $accountID]);
 
     return $balance;
 }
-
 
 // Handle POST requests for adding transactions
 if (isset($_POST['add'])) {
@@ -79,13 +76,10 @@ $transactionsStmt = $pdo->prepare("SELECT t.transactionID, t.transactionDescript
 $transactionsStmt->execute([$accountID, '%' . $search . '%', '%' . $search . '%']);
 $transactions = $transactionsStmt->fetchAll();
 
-
 // Fetch the current balance from the account table
 $balanceStmt = $pdo->prepare("SELECT accountBalance FROM account WHERE accountID = ?");
 $balanceStmt->execute([$accountID]);
 $currentBalance = $balanceStmt->fetchColumn();
-
-
 
 ob_end_flush(); // End output buffering and flush all output
 ?>
@@ -96,7 +90,6 @@ ob_end_flush(); // End output buffering and flush all output
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Details</title>
-    <!-- CSS styling for the page -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -122,19 +115,16 @@ ob_end_flush(); // End output buffering and flush all output
 </head>
 <body>
     <h1>Account Transactions</h1>
-    <a href="manage_account.php">Back to account</a>
+    <a href="manage_accounts.php">Back to Accounts</a>
 
-    <!-- Display Current Balance -->
     <h2>Current Balance: $<?= number_format($currentBalance, 2) ?></h2>
 
-    <!-- Search Form -->
     <h2>Transactions Search</h2>
     <form method="post" action="">
         <input type="text" name="search" placeholder="Search transactions...">
         <button type="submit">Search</button>
     </form>
 
-    <!-- Transaction Form for Adding New Transactions -->
     <h2>Add New Transaction</h2>
     <form method="post" action="">
         <input type="text" name="description" placeholder="Description">
@@ -146,7 +136,6 @@ ob_end_flush(); // End output buffering and flush all output
         </select>
         <select name="category">
             <?php
-            // Fetch all categories for the category dropdown
             $categoriesStmt = $pdo->prepare("SELECT categoryID, categoryName FROM category");
             $categoriesStmt->execute();
             $categories = $categoriesStmt->fetchAll();
@@ -158,12 +147,10 @@ ob_end_flush(); // End output buffering and flush all output
         <button type="submit" name="add">Add Transaction</button>
     </form>
 
-    <!-- Transaction table for displaying Transactions -->
     <h2>Transactions</h2>
     <table>
         <thead>
             <tr>
-                <!-- Sorting links to the table headers -->
                 <th><a href="?accountID=<?= $accountID ?>&sort=categoryName&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Category</a></th>
                 <th><a href="?accountID=<?= $accountID ?>&sort=transactionAmount&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Amount</a></th>
                 <th><a href="?accountID=<?= $accountID ?>&sort=transactionDate&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Date</a></th>
@@ -178,7 +165,7 @@ ob_end_flush(); // End output buffering and flush all output
                 <td><?= htmlspecialchars($transaction['categoryName']) ?></td>
                 <td>$<?= number_format(htmlspecialchars($transaction['transactionAmount']), 2) ?></td>
                 <td><?= htmlspecialchars($transaction['transactionDate']) ?></td>
-                <td><?= htmlspecialchars($transaction['transactionType']) ?></td
+                <td><?= htmlspecialchars($transaction['transactionType']) ?></td>
                 <td><?= htmlspecialchars($transaction['transactionDescription']) ?></td>
                 <td>
                     <a href="?accountID=<?= $accountID ?>&delete=<?= $transaction['transactionID'] ?>" onclick="return confirm('Are you sure you want to delete this transaction?');">Delete</a>
