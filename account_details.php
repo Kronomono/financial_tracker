@@ -15,6 +15,15 @@ if (!isset($_SESSION['userid'])) {
 require_once 'includes/database-connection.php';
 
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
+function displayDebugInfo($initialBalance, $totalIncome, $totalExpenses, $newBalance) {
+    echo "<div style='background-color: #FFFFE0; padding: 10px; margin: 20px 0; border: 1px solid #E0E0E0;'>";
+    echo "<strong>Debug Information:</strong><br>";
+    echo "Initial Balance: " . number_format($initialBalance, 2) . "<br>";
+    echo "Total Income: " . number_format($totalIncome, 2) . "<br>";
+    echo "Total Expenses: " . number_format($totalExpenses, 2) . "<br>";
+    echo "New Balance: " . number_format($newBalance, 2) . "<br>";
+    echo "</div>";
+}
 
 function updateAccountBalance($pdo, $accountID) {
     // Fetch the initial balance from the account table
@@ -70,6 +79,8 @@ if (isset($_POST['add'])) {
     updateAccountBalance($pdo, $accountID);
 
     header('Location: account_details.php?accountID=' . $accountID);
+    displayDebugInfo($initialBalance, $totalIncome, $totalExpenses, $newBalance);
+   
     exit();
 }
 
@@ -82,6 +93,7 @@ if (isset($_POST['update'])) {
     updateAccountBalance($pdo, $accountID);
 
     header('Location: account_details.php?accountID=' . $accountID);
+    displayDebugInfo($initialBalance, $totalIncome, $totalExpenses, $newBalance);
     exit();
 }
 
