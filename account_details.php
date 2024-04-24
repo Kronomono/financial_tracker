@@ -13,13 +13,36 @@ require_once 'includes/database-connection.php';
 
 $accountID = $_GET['accountID'] ?? null; // Get the accountID from the URL
 
+function updateAccountBalance($pdo, $accountID, $amount, $type) {
+    // Check the current balance
+    $balanceStmt = $pdo->prepare("SELECT balance FROM accounts WHERE accountID = ?");
+    $balanceStmt->execute([$accountID]);
+    $balance = $balanceStmt->fetchColumn();
+
+    // Update the balance based on transaction type
+    if ($type == 'Income') {
+        $newBalance = $balance + $amount;
+    } else { // Assume 'Expense'
+        $newBalance = $balance - $amount;
+    }
+
+    // Update the account with the new balance
+    $updateStmt = $pdo->prepare("UPDATE accounts SET balance = ? WHERE accountID = ?");
+    $updateStmt->execute([$newBalance, $accountID]);
+}
+
 // Handle POST requests for adding transactions
 if (isset($_POST['add'])) {
     $stmt = $pdo->prepare("INSERT INTO transactions (transactionDescription, transactionAmount, transactionDate, transactionType, accountID, categoryID) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$_POST['description'], $_POST['amount'], $_POST['date'], $_POST['type'], $accountID, $_POST['category']]);
+
+    // Update account balance
+    updateAccountBalance($pdo, $accountID, $_POST['amount'], $_POST['type']);
+
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
+
 
 // WOP: Handle POST requests for updating transactions
 if (isset($_POST['update'])) {
@@ -32,13 +55,28 @@ if (isset($_POST['update'])) {
 // Handle deletion of a transaction
 if (isset($_GET['delete'])) {
     $transactionID = $_GET['delete'];
+    
+    // Fetch the transaction details to update the balance correctly
+    $transStmt = $pdo->prepare("SELECT transactionAmount, transactionType FROM transactions WHERE transactionID = ?");
+    $transStmt->execute([$transactionID]);
+    $transaction = $transStmt->fetch();
+    
+    // Delete the transaction
     $stmt = $pdo->prepare("DELETE FROM transactions WHERE transactionID = ?");
     $stmt->execute([$transactionID]);
+
+    // Update account balance
+    if ($transaction) {
+        // Reverse the amount based on type
+        $adjustedAmount = $transaction['transactionType'] == 'Income' ? -$transaction['transactionAmount'] : $transaction['transactionAmount'];
+        updateAccountBalance($pdo, $accountID, $adjustedAmount, $transaction['transactionType']);
+    }
 
     // Redirect to clear the 'delete' parameter from the URL
     header('Location: account_details.php?accountID=' . $accountID);
     exit();
 }
+
 
 // Fetch the account details for the selected account
 $search = $_POST['search'] ?? '';
