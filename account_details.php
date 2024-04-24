@@ -1,13 +1,11 @@
-
 <?php
+
+ob_start(); // Start output buffering
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 echo "Testing simple output.";
 
-
-
-ob_start(); // Start output buffering
-session_start();
 
 // Check if the user is logged in, otherwise redirect to login page
 if (!isset($_SESSION['userid'])) {
