@@ -127,15 +127,21 @@ ob_end_flush(); // End output buffering and flush all output
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Details</title>
+    <title>Manage Budgets</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1, h2 {
+            color: #333;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            background-color: #fff;
             margin-top: 20px;
         }
         th, td {
@@ -149,68 +155,97 @@ ob_end_flush(); // End output buffering and flush all output
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+        label, input, select, button {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <h1>Account Transactions</h1>
-    <a href="manage_accounts.php">Back to Accounts</a>
+<h1>Manage Budgets</h1>
+<a href="dashboard.php">Back to Dashboard</a>
 
-    <h2>Current Balance: $<?= number_format($currentBalance, 2) ?></h2>
+<!-- Editing or Adding Form -->
+<h2><?= $editing ? "Edit Budget" : "Add New Budget" ?></h2>
+<form action="manage_budgets.php" method="post">
+    <input type="hidden" name="budgetID" value="<?= $editing ? $editBudget['budgetID'] : '' ?>">
+    <label for="categoryID">Category:</label>
+    <select id="categoryID" name="categoryID" required>
+        <?php foreach ($categories as $category): ?>
+            <option value="<?= htmlspecialchars($category['categoryID']) ?>" <?= $editing && $category['categoryID'] == $editBudget['categoryID'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars($category['categoryName']) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <label for="budgetLimit">Budget Limit:</label>
+    <input type="number" id="budgetLimit" name="budgetLimit" required value="<?= $editing ? $editBudget['budgetLimit'] : '' ?>">
+    <label for="budgetInterval">Budget Interval:</label>
+    <select id="budgetInterval" name="budgetInterval" required>
+        <option value="Weekly" <?= $editing && $editBudget['budgetInterval'] == 'Weekly' ? 'selected' : '' ?>>Weekly</option>
+        <option value="Monthly" <?= $editing && $editBudget['budgetInterval'] == 'Monthly' ? 'selected' : '' ?>>Monthly</option>
+        <option value="Annual" <?= $editing && $editBudget['budgetInterval'] == 'Annual' ? 'selected' : '' ?>>Annual</option>
+    </select>
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" name="startDate" required value="<?= $editing ? $editBudget['startDate'] : '' ?>">
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" name="endDate" required value="<?= $editing ? $editBudget['endDate'] : '' ?>">
+    <button type="submit" name="submit_budget"><?= $editing ? 'Update Budget' : 'Add Budget' ?></button>
+</form>
 
-    <h2>Transactions Search</h2>
-    <form method="post" action="">
-        <input type="text" name="search" placeholder="Search transactions...">
-        <button type="submit">Search</button>
-    </form>
-
-    <h2>Add New Transaction</h2>
-    <form method="post" action="">
-        <input type="text" name="description" placeholder="Description">
-        <input type="number" name="amount" placeholder="Amount">
-        <input type="date" name="date" placeholder="Date">
-        <select name="type">
-            <option value="Expense">Expense</option>
-            <option value="Income">Income</option>
-        </select>
-        <select name="category">
-            <?php
-            $categoriesStmt = $pdo->prepare("SELECT categoryID, categoryName FROM category");
-            $categoriesStmt->execute();
-            $categories = $categoriesStmt->fetchAll();
-            foreach ($categories as $category) {
-                echo '<option value="' . $category['categoryID'] . '">' . htmlspecialchars($category['categoryName']) . '</option>';
-            }
-            ?>
-        </select>
-        <button type="submit" name="add">Add Transaction</button>
-    </form>
-
-    <h2>Transactions</h2>
-    <table>
-        <thead>
-            <tr>
-                <th><a href="?accountID=<?= $accountID ?>&sort=categoryName&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Category</a></th>
-                <th><a href="?accountID=<?= $accountID ?>&sort=transactionAmount&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Amount</a></th>
-                <th><a href="?accountID=<?= $accountID ?>&sort=transactionDate&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Date</a></th>
-                <th><a href="?accountID=<?= $accountID ?>&sort=transactionType&order=<?= $order == 'DESC' ? 'ASC' : 'DESC' ?>">Type</a></th>
-                <th>Description</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($transactions as $transaction): ?>
-            <tr>
-                <td><?= htmlspecialchars($transaction['categoryName']) ?></td>
-                <td>$<?= ($transaction['transactionType'] === 'Expense') ? number_format(abs(htmlspecialchars($transaction['transactionAmount'])), 2) : number_format(htmlspecialchars($transaction['transactionAmount']), 2) ?></td>
-                <td><?= htmlspecialchars($transaction['transactionDate']) ?></td>
-                <td><?= htmlspecialchars($transaction['transactionType']) ?></td>
-                <td><?= htmlspecialchars($transaction['transactionDescription']) ?></td>
-                <td>
-                    <a href="?accountID=<?= $accountID ?>&delete=<?= $transaction['transactionID'] ?>" onclick="return confirm('Are you sure you want to delete this transaction?');">Delete</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+<!-- Table to list all budgets -->
+<h2>Your Budgets</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Budget Limit</th>
+            <th>Budget Interval</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($budgets as $budget): ?>
+        <tr>
+            <td><?= htmlspecialchars($budget['categoryName']) ?></td>
+            <td>$<?= htmlspecialchars(number_format($budget['budgetLimit'], 2)) ?></td>
+            <td><?= htmlspecialchars($budget['budgetInterval']) ?></td>
+            <td><?= htmlspecialchars($budget['startDate']) ?></td>
+            <td><?= htmlspecialchars($budget['endDate']) ?></td>
+            <td>
+                <a href="manage_budgets.php?action=edit&budgetID=<?= $budget['budgetID'] ?>">Edit</a> |
+                <a href="manage_budgets.php?action=delete&budgetID=<?= $budget['budgetID'] ?>" onclick="return confirm('Are you sure you want to delete this budget?');">Delete</a>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
 </body>
 </html>
